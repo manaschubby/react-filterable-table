@@ -27,9 +27,6 @@
       "react-app/jest"
     ]
   },
-  "devDependencies": {
-    "typescript": "5.0.2"
-  },
   "browserslist": {
     "production": [
       ">0.2%",
