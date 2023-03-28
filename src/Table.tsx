@@ -17,7 +17,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import { visuallyHidden } from '@mui/utils';
 import { Order, order} from "./orders"
 import { display } from '@mui/system';
-import { Checkbox, FormControlLabel, Input } from '@mui/material';
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Input, TextField } from '@mui/material';
 
 
 
@@ -233,13 +233,131 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
   );
 }
 
+interface EditDialogProps {
+  open: boolean,
+  handleClose: (e: React.MouseEvent<HTMLButtonElement>, order?: order) => void,
+  index: number,
+}
+
+function EditDialog(props: EditDialogProps){
+  const [user, setUser] = React.useState<string>("")
+  const [cost, setcost] = React.useState<number>()
+  const [shipper, setShipper] = React.useState<string>("")
+  const [weight, setWeight] = React.useState<number>()
+  const [source, setSource] = React.useState<string>("")
+  const [destination, setDestination] = React.useState<string>("")
+  const [status, setStatus] = React.useState<"out-for-delivery" | "" | "delivered">("")
+
+  const onChange = (e, setState: React.Dispatch<React.SetStateAction<any>>)=>{
+    setState(e.target.value)
+  }
+  React.useEffect(()=>{
+    if(props.index!=-1){
+      const order = Order[props.index]
+      setUser(order.user)
+      setShipper(order.shipper)
+      setcost(order.cost)
+      setWeight(order.weight)
+      setSource(order.source)
+      setDestination(order.destination)
+      setStatus(order.status)
+    }
+  },[props.open])
+  return (
+  <Dialog open={props.open}>
+    <DialogTitle>Subscribe</DialogTitle>
+    <DialogContent>
+      <DialogContentText>
+        Edit the fields
+      </DialogContentText>
+      <TextField
+        autoFocus
+        margin="dense"
+        id="name"
+        label="User"
+        value={user}
+        fullWidth
+        onChange={(e)=>onChange(e, setUser)}
+        variant="standard"
+      />
+      <TextField
+        autoFocus
+        margin="dense"
+        id="shipper"
+        label="Shipper"
+        value={shipper}
+        fullWidth
+        onChange={(e)=>onChange(e, setShipper)}
+        variant="standard"
+      />
+      <TextField
+        autoFocus
+        margin="dense"
+        id="cost"
+        label="Cost"
+        value={cost}
+        fullWidth
+        onChange={(e)=>onChange(e, setcost)}
+        variant="standard"
+      />
+      <TextField
+        autoFocus
+        margin="dense"
+        id="weight"
+        label="Weight"
+        value={weight}
+        onChange={(e)=>onChange(e, setWeight)}
+        fullWidth
+        variant="standard"
+      />
+      <TextField
+        autoFocus
+        margin="dense"
+        id="source"
+        label="Source"
+        value={source}
+        fullWidth
+        onChange={(e)=>onChange(e, setSource)}
+        variant="standard"
+      />
+      <TextField
+        autoFocus
+        margin="dense"
+        id="dest"
+        label="Destination"
+        value={destination}
+        fullWidth
+        onChange={(e)=>onChange(e, setDestination)}
+        variant="standard"
+      />
+      <TextField
+        autoFocus
+        margin="dense"
+        id="status"
+        label="Status"
+        value={status}
+        fullWidth
+        onChange={(e)=>onChange(e, setStatus)}
+        variant="standard"
+      />
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={props.handleClose} id={"cancel"}>Cancel</Button>
+      <Button onClick={(e) => props.handleClose(e, {user: user, shipper: shipper, destination:destination, weight:weight, cost:cost, source:source, status:status})} id={"submit"}>Submit</Button>
+    </DialogActions>
+  </Dialog>
+)
+}
+
 export default function EnhancedTable() {
   const [order, setOrder] = React.useState<Order>('asc');
   const [orderBy, setOrderBy] = React.useState<keyof order>('cost');
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [data, setData] = React.useState<Array<order>>(Order)
-  const [refresh, performRefresh] = React.useState<boolean>(false)
+  const [data, setData] = React.useState<Array<order>>(Order);
+  const [refresh, performRefresh] = React.useState<boolean>(false);
+  const [editIndex, setEditIndex] = React.useState<number>(-1);
+  const [dialogOpen, setDialogOpen] = React.useState<boolean>(false);
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
@@ -262,13 +380,31 @@ export default function EnhancedTable() {
     setPage(0);
   };
 
+  const openDialog = (index: number) => {
+    setEditIndex(index);
+    setDialogOpen(true);
+  }
 
 
+  const handleDialogClose = (e: React.MouseEvent<HTMLButtonElement>, order? : order) =>{
+    if (e.currentTarget.id == "cancel"){
+      setEditIndex(-1);
+      setDialogOpen(false);
+    }
+    else{
+      Order.splice(editIndex, 1, order);
+      setData(Order);
+      performRefresh(!refresh);
+      setEditIndex(-1);
+      setDialogOpen(false);
+    }
+  }
   const emptyRows =
     page > 0 ? Math.max(0, (1 + page) * rowsPerPage - Order.length) : 0;
 
   return (
     <Box sx={{ width: '100%' }}>
+      <EditDialog open={dialogOpen} handleClose={handleDialogClose} index={editIndex}/>
       <Paper sx={{ width: '100%', mb: 2 }}>
         <EnhancedTableToolbar data={data} setData={setData} refresh={refresh} performRefresh={performRefresh}/>
         <TableContainer>
@@ -286,11 +422,12 @@ export default function EnhancedTable() {
             <TableBody>
               {stableSort(data, getComparator(order, orderBy))
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row, index) => {
+                .map((row: order, index) => {
                   const labelId = `enhanced-table-checkbox-${index}`;
 
                   return (
                     <TableRow
+                      onClick={()=>{openDialog(Order.indexOf(row))}}
                       hover
                       role="checkbox"
                       tabIndex={-1}

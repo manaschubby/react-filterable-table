@@ -5,7 +5,7 @@ export interface order {
     user: string;
     source: string;
     destination: string;
-    status: "delivered" | "out-for-delivery";
+    status: "delivered" | "out-for-delivery" | "";
 }
 export  const Order  : order[]  = [
     {
